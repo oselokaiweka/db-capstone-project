@@ -406,7 +406,7 @@ CREATE TABLE `Orders` (
 
 LOCK TABLES `Orders` WRITE;
 /*!40000 ALTER TABLE `Orders` DISABLE KEYS */;
-INSERT INTO `Orders` (`OrderID`, `CustomerID`, `ItemID`, `MenuID`, `DrinkID`, `ItemQty`, `OrderDate`, `ItemPrice`) VALUES (1,1,'ME:0017','ME:0017',NULL,5,'2023-03-18 13:34:07',NULL),(2,2,'DR:0002',NULL,'DR:0002',2,'2023-03-18 13:36:10',NULL),(3,3,'DR:0003',NULL,NULL,4,'2023-03-18 16:52:08',100.00),(4,3,'ME:0013',NULL,NULL,4,'2023-03-18 16:53:22',200.00),(5,3,'ME:0013',NULL,NULL,1,'2023-03-18 17:00:43',200.00),(6,7,'DR:0004',NULL,NULL,2,'2023-03-19 10:21:36',7.99);
+INSERT INTO `Orders` (`OrderID`, `CustomerID`, `ItemID`, `MenuID`, `DrinkID`, `ItemQty`, `OrderDate`, `ItemPrice`) VALUES (3,3,'DR:0003',NULL,NULL,4,'2023-03-18 16:52:08',100.00),(4,3,'ME:0013',NULL,NULL,4,'2023-03-18 16:53:22',200.00),(5,3,'ME:0013',NULL,NULL,1,'2023-03-18 17:00:43',200.00),(6,7,'DR:0004',NULL,NULL,2,'2023-03-19 10:21:36',7.99);
 /*!40000 ALTER TABLE `Orders` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -431,6 +431,20 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+
+--
+-- Temporary view structure for view `OrdersView`
+--
+
+DROP TABLE IF EXISTS `OrdersView`;
+/*!50001 DROP VIEW IF EXISTS `OrdersView`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `OrdersView` AS SELECT 
+ 1 AS `OrderID`,
+ 1 AS `ItemQty`,
+ 1 AS `TotalCost`*/;
+SET character_set_client = @saved_cs_client;
 
 --
 -- Table structure for table `RecipeIngredients`
@@ -626,6 +640,89 @@ DELIMITER ;
 --
 -- Dumping routines for database 'LittleLemonDB'
 --
+/*!50003 DROP PROCEDURE IF EXISTS `CancelOrder` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`admin`@`%` PROCEDURE `CancelOrder`(in id int)
+begin delete from Orders where OrderID = id; select concat('Order ',id,' is cancelled') as Confirmation; end ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `GetMaxQty` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`admin`@`%` PROCEDURE `GetMaxQty`()
+select max(ItemQty) as 'Max Quantity in Orders' from Orders ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `OrderQty_over` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`admin`@`%` PROCEDURE `OrderQty_over`(in amount int)
+begin select M.MenuTitle as Product from Menu M inner join Orders O on M.MenuID = O.ItemID where M.MenuID = any (select ItemID from Orders where ItemID like 'ME%' and ItemQty >= amount) union select D.Drink as Product from Drinks D inner join Orders O on D.DrinkID = O.ItemID where D.DrinkID = any (select ItemID from Orders where ItemID like 'DR%' and ItemQty >= amount); end ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `Show_Order_Over` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`admin`@`%` PROCEDURE `Show_Order_Over`(in amount int)
+begin 
+        select C.CustomerID, concat(C.FirstName, ' ',C.LastName) as FullName,
+        O.OrderID, O.TotalCost, D.Drink as Product 
+        from Customers C inner join Orders O 
+        on C.CustomerID = O.CustomerID inner join Drinks D 
+        on D.DrinkID = O.ItemID 
+        where O.TotalCost >= amount
+        union
+        select C.CustomerID, concat(C.FirstName, ' ',C.LastName) as FullName,
+        O.OrderID, O.TotalCost, M.MenuTitle as Product 
+        from Customers C inner join Orders O 
+        on C.CustomerID = O.CustomerID inner join Menu M 
+        on M.MenuID = O.ItemID 
+        where O.TotalCost >= amount
+   ;
+end ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Final view structure for view `HouseMenu`
@@ -644,6 +741,24 @@ DELIMITER ;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `OrdersView`
+--
+
+/*!50001 DROP VIEW IF EXISTS `OrdersView`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`admin`@`%` SQL SECURITY DEFINER */
+/*!50001 VIEW `OrdersView` AS select `Orders`.`OrderID` AS `OrderID`,`Orders`.`ItemQty` AS `ItemQty`,`Orders`.`TotalCost` AS `TotalCost` from `Orders` where (`Orders`.`ItemQty` >= 2) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -654,4 +769,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-03-19 17:53:19
+-- Dump completed on 2023-03-22 13:55:00
